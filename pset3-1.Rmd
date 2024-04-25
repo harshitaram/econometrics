@@ -1,0 +1,140 @@
+---
+title: "Pset 3"
+author: "Abby Beckler"
+date: '2024-02-03'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(echo = TRUE, root.dir = "/Users/harshitaramakrishnan/Desktop/Metrics/Earnings_and_Height")
+```
+
+# **E4.2**
+```{r setup_2, echo=FALSE}
+# Load necessary libraries
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(broom))
+suppressPackageStartupMessages(library(readxl))
+
+# Load the dataset
+data <- read_excel("Earnings_and_Height.xlsx")
+```
+
+# a. What is the median value of height in the sample?
+```{r 42_a}
+m_height <- median(data$height)
+m_height
+```
+
+# b. i. Estimate average earnings for workers whose height is at most 67 inches.
+```{r 42_bi}
+less_67 <- data$earnings[data$height <= 67]
+earn_less_67 <- mean(less_67)
+earn_less_67
+```
+
+# b. ii. Estimate average earnings for workers whose height is greater than 67 inches.
+```{r 42_bii}
+more_67 <- data$earnings[data$height > 67]
+earn_more_67 <- mean(more_67)
+earn_more_67
+```
+
+# b. iii. On average, do taller workers earn more than shorter workers? How much more? What is a 95% confidence interval for the difference in average earnings?
+```{r 42_biii}
+earn_diff = earn_more_67 - earn_less_67
+earn_diff
+# On average, taller workers earn 5499.44 more than shorter workers
+t_test_result <- t.test(less_67, more_67, var.equal = TRUE)
+sample_mean <- t_test_result$estimate
+t_value <- t_test_result$statistic
+standard_error <- t_test_result$stderr
+se_times_z <- qt(0.975, df = t_test_result$parameter) * standard_error
+ci <-c(sample_mean - se_times_z, sample_mean + se_times_z) %>% 
+  round(4) 
+paste0("95% Confidence Interval: (", ci[1], ",", ci[2], ")")
+```
+
+# c. Construct a scatterplot of annual earnings (Earnings) on height (Height).
+```{r 42_c}
+ggplot(data, aes(x = height, y = earnings)) +
+  geom_point() +
+  labs(title = "Scatterplot of Earnings on Height", x = "Height", y = "Earnings")
+```
+
+# d. i. Run a regression of Earnings on Height. What is the estimated slope?
+```{r 42_di}
+reg <- lm(earnings ~ height, data = data)
+slope <- coef(reg)[2]
+slope
+```
+
+# d. ii. Use the estimated regression to predict earnings for a worker who is 67 inches tall, for a worker who is 70 inches tall, and for a worker who is 65 inches tall.
+```{r 42_dii}
+intercept <- coef(reg)[1]
+pred_67 <- slope * 67 + intercept
+pred_67
+pred_70 <- slope * 70 + intercept
+pred_70
+pred_65 <- slope * 65 + intercept
+pred_65
+```
+
+# e. i. - iv. Suppose height were measured in centimeters instead of inches.
+# i. What is the estimated slope of the regression?
+```{r 42_ei}
+data$height_cm <- data$height * 2.54
+reg_cm <- lm(earnings ~ height_cm, data = data)
+slope_cm <- coef(reg_cm)[2]
+slope_cm
+```
+# ii. What is the estimated intercept?
+```{r 42_eii}
+intercept_cm <- coef(reg_cm)[1]
+intercept_cm
+```
+# iii. What is the R2?
+```{r 42_eiii}
+r_squared_cm <- summary(reg_cm)$r.squared
+r_squared_cm
+```
+# iv. What is the standard error of the regression?
+```{r 42_eiv}
+std_error_cm <- summary(reg_cm)$sigma
+std_error_cm
+```
+
+# f. i. Run a regression of Earnings on Height, using data for female workers only.
+```{r 42_fi}
+reg_fm <- lm(earnings ~ height, data = filter(data, sex == 1))
+slope_fm <- tidy(reg_fm)$estimate[2]
+slope_fm
+```
+
+# f. ii. Predict earnings for a woman 1 inch taller than the average woman in the sample.
+```{r 42_fii}
+taller_fm <- predict(reg_fm, newdata = data.frame(height = mean(data$height[data$sex == 1]) + 1))
+taller_fm
+```
+
+# g. Repeat (f) for male workers.
+# g. i. Run a regression of Earnings on Height, using data for male workers only.
+```{r 42_gi}
+reg_ml <- lm(earnings ~ height, data = filter(data, sex == 0))
+slope_ml <- tidy(reg_ml)$estimate[2]
+slope_ml
+```
+
+# g. ii. Predict earnings for a man 1 inch taller than the average man in the sample.
+```{r 42_gii}
+taller_ml <- predict(reg_ml, newdata = data.frame(height = mean(data$height[data$sex == 0]) + 1))
+taller_ml
+```
+
+
+# h. Do you think that height is uncorrelated with other factors that cause earning? That is, do you think that the regression error term, u; has a conditional mean of 0 given Height (X)? (You will investigate this more in the Earnings and Height exercises in later chapters.)
+If height were uncorrelated with other factors, then differences in height would not correspond to other factors causing differences in earnings. I think this would be true. 
+
+
+
+

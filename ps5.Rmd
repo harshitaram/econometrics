@@ -1,0 +1,89 @@
+---
+title: "ps5"
+output:
+  pdf_document: default
+  html_document: default
+date: "2024-03-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+
+renv::install("haven")  
+library(haven)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+mydat <- read_dta("/Users/harshitaramakrishnan/Desktop/Metrics/fertil2.dta")
+summary(mydat)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r }
+model<-lm(educ~frsthalf, data=mydat)
+summary(model)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r }
+mydat$educ_hat <- predict(model)
+
+
+second_stage <- lm(children ~ educ_hat + age + I(age^2), data = mydat)
+
+
+summary(second_stage)
+```
+
+```{r }
+
+# OLS regression
+ols_model <- lm(children ~ educ + age + I(age^2) + spirit + protest + catholic, data = mydat)
+summary(ols_model)
+
+# TSLS regression
+# First stage
+first_stage <- lm(educ ~ frsthalf + spirit + protest + catholic, data = mydat)
+summary(first_stage)
+
+mydat$educ_hat <- predict(first_stage)
+# Second stage
+tsls_model <- lm(children ~ educ_hat + age + I(age^2) + spirit + protest + catholic, data = mydat)
+summary(tsls_model)
+
+```
+
+```{r}
+
+new_data <- data.frame(
+  educ = 12,
+  frsthalf = 1,  # Assuming not born in the first half of the year 
+  age = 20,
+  spirit = 0,
+  protest = 0,
+  catholic = 0
+)
+
+str(new_data)
+
+new_data$educ_hat <- predict(first_stage, newdata = new_data)
+
+
+predicted_children_TSLS <- predict(tsls_model, newdata = new_data)
+cat("Predicted Children (TSLS):", predicted_children_TSLS, "\n")
+
+
+
+```
